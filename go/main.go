@@ -174,14 +174,14 @@ func (mc *MySQLConnectionEnv) ConnectDB() (*sqlx.DB, error) {
 }
 
 func init() {
-	jsonText, err := ioutil.ReadFile("../fixture/chair_condition.json")
+	jsonText, err := ioutil.ReadFile("../../webapp2/fixture/chair_condition.json")
 	if err != nil {
 		fmt.Printf("%v\n", err)
 		os.Exit(1)
 	}
 	json.Unmarshal(jsonText, &chairSearchCondition)
 
-	jsonText, err = ioutil.ReadFile("../fixture/estate_condition.json")
+	jsonText, err = ioutil.ReadFile("../../webapp2/fixture/estate_condition.json")
 	if err != nil {
 		fmt.Printf("%v\n", err)
 		os.Exit(1)
