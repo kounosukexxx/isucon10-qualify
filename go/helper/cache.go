@@ -2,6 +2,9 @@ package helper
 
 import "sync"
 
+// care about type of key
+// int64(1) and int(1) indicates different
+
 type CacheMap struct {
 	m map[interface{}]interface{}
 	sync.RWMutex

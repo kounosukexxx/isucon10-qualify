@@ -47,7 +47,7 @@ func getChairDetail(c echo.Context) error {
 	}
 
 	chair := Chair{}
-	chairInterface, ok := chairCache.Get(id)
+	chairInterface, ok := chairCache.Get(int64(id))
 	if ok {
 		chair = chairInterface.(Chair)
 		if chair.Stock <= 0 {
