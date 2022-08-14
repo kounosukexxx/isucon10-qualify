@@ -318,6 +318,7 @@ func buyChair(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
+	chair.Stock--
 	chairCache.Set(chair.ID, chair)
 
 	return c.NoContent(http.StatusOK)
