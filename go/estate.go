@@ -55,7 +55,7 @@ func getEstateDetail(c echo.Context) error {
 	if ok {
 		estate = estateInterface.(Estate)
 	} else {
-		err = db.Get(&estate, "SELECT * FROM estate WHERE id = ?", id)
+		err = dbEstate.Get(&estate, "SELECT * FROM estate WHERE id = ?", id)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				c.Echo().Logger.Infof("getEstateDetail estate id %v not found", id)
@@ -102,7 +102,7 @@ func postEstate(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
-	tx, err := db.Begin()
+	tx, err := dbEstate.Begin()
 	if err != nil {
 		c.Logger().Errorf("failed to begin tx: %v", err)
 		return c.NoContent(http.StatusInternalServerError)
@@ -224,7 +224,7 @@ func searchEstates(c echo.Context) error {
 	limitOffset := " ORDER BY popularity_desc ASC, id ASC LIMIT ? OFFSET ?"
 
 	var res EstateSearchResponse
-	err = db.Get(&res.Count, countQuery+searchCondition, params...)
+	err = dbEstate.Get(&res.Count, countQuery+searchCondition, params...)
 	if err != nil {
 		c.Logger().Errorf("searchEstates DB execution error : %v", err)
 		return c.NoContent(http.StatusInternalServerError)
@@ -232,7 +232,7 @@ func searchEstates(c echo.Context) error {
 
 	estates := []Estate{}
 	params = append(params, perPage, page*perPage)
-	err = db.Select(&estates, searchQuery+searchCondition+limitOffset, params...)
+	err = dbEstate.Select(&estates, searchQuery+searchCondition+limitOffset, params...)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return c.JSON(http.StatusOK, EstateSearchResponse{Count: 0, Estates: []Estate{}})
@@ -249,7 +249,7 @@ func searchEstates(c echo.Context) error {
 func getLowPricedEstate(c echo.Context) error {
 	estates := make([]Estate, 0, Limit)
 	query := `SELECT * FROM estate ORDER BY rent ASC, id ASC LIMIT ?`
-	err := db.Select(&estates, query, Limit)
+	err := dbEstate.Select(&estates, query, Limit)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			c.Logger().Error("getLowPricedEstate not found")
@@ -271,7 +271,7 @@ func searchRecommendedEstateWithChair(c echo.Context) error {
 
 	chair := Chair{}
 	query := `SELECT * FROM chair WHERE id = ?`
-	err = db.Get(&chair, query, id)
+	err = dbEstate.Get(&chair, query, id)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			c.Logger().Infof("Requested chair id \"%v\" not found", id)
@@ -286,7 +286,7 @@ func searchRecommendedEstateWithChair(c echo.Context) error {
 	h := chair.Height
 	d := chair.Depth
 	query = `SELECT * FROM estate WHERE (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) ORDER BY popularity_desc ASC, id ASC LIMIT ?`
-	err = db.Select(&estates, query, w, h, w, d, h, w, h, d, d, w, d, h, Limit)
+	err = dbEstate.Select(&estates, query, w, h, w, d, h, w, h, d, d, w, d, h, Limit)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return c.JSON(http.StatusOK, EstateListResponse{[]Estate{}})
@@ -313,7 +313,7 @@ func searchEstateNazotte(c echo.Context) error {
 	b := coordinates.getBoundingBox()
 	estatesInBoundingBox := []Estate{}
 	query := `SELECT * FROM estate WHERE latitude <= ? AND latitude >= ? AND longitude <= ? AND longitude >= ? ORDER BY popularity_desc ASC, id ASC`
-	err = db.Select(&estatesInBoundingBox, query, b.BottomRightCorner.Latitude, b.TopLeftCorner.Latitude, b.BottomRightCorner.Longitude, b.TopLeftCorner.Longitude)
+	err = dbEstate.Select(&estatesInBoundingBox, query, b.BottomRightCorner.Latitude, b.TopLeftCorner.Latitude, b.BottomRightCorner.Longitude, b.TopLeftCorner.Longitude)
 	if err == sql.ErrNoRows {
 		c.Echo().Logger.Infof("select * from estate where latitude ...", err)
 		return c.JSON(http.StatusOK, EstateSearchResponse{Count: 0, Estates: []Estate{}})
@@ -406,7 +406,7 @@ func postEstateRequestDocument(c echo.Context) error {
 	_, ok = estateCache.Get(id)
 	if !ok {
 		query := `SELECT * FROM estate WHERE id = ?`
-		err = db.Get(&estate, query, id)
+		err = dbEstate.Get(&estate, query, id)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				return c.NoContent(http.StatusNotFound)

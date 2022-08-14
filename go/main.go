@@ -20,8 +20,11 @@ import (
 const Limit = 20
 const NazotteLimit = 50
 
-var db *sqlx.DB
-var mySQLConnectionData *MySQLConnectionEnv
+var dbEstate *sqlx.DB
+var dbChair *sqlx.DB
+var mySQLConnectionDataEstate *MySQLConnectionEnv
+var mySQLConnectionDataChair *MySQLConnectionEnv
+
 var chairSearchCondition ChairSearchCondition
 var estateSearchCondition EstateSearchCondition
 
@@ -144,11 +147,11 @@ func (r *RecordMapper) Err() error {
 	return r.err
 }
 
-func NewMySQLConnectionEnv() *MySQLConnectionEnv {
+func NewMySQLConnectionEnv(host string) *MySQLConnectionEnv {
 	// fmt.Println(getEnv("MYSQL_HOST", "10.0.0.102"))
 	return &MySQLConnectionEnv{
 		// Host:     getEnv("MYSQL_HOST", "127.0.0.1"),
-		Host:     "10.0.0.102",
+		Host:     host,
 		Port:     getEnv("MYSQL_PORT", "3306"),
 		User:     getEnv("MYSQL_USER", "isucon"),
 		DBName:   getEnv("MYSQL_DBNAME", "isuumo"),
@@ -217,15 +220,23 @@ func main() {
 	e.GET("/api/estate/search/condition", getEstateSearchCondition)
 	e.GET("/api/recommended_estate/:id", searchRecommendedEstateWithChair)
 
-	mySQLConnectionData = NewMySQLConnectionEnv()
+	mySQLConnectionDataEstate = NewMySQLConnectionEnv("10.0.0.101")
+	mySQLConnectionDataChair = NewMySQLConnectionEnv("10.0.0.102")
 
 	var err error
-	db, err = mySQLConnectionData.ConnectDB()
+	dbEstate, err = mySQLConnectionDataEstate.ConnectDB()
 	if err != nil {
 		e.Logger.Fatalf("DB connection failed : %v", err)
 	}
-	db.SetMaxOpenConns(10)
-	defer db.Close()
+	dbEstate.SetMaxOpenConns(10)
+	defer dbEstate.Close()
+
+	dbChair, err = mySQLConnectionDataChair.ConnectDB()
+	if err != nil {
+		e.Logger.Fatalf("DB connection failed : %v", err)
+	}
+	dbChair.SetMaxOpenConns(10)
+	defer dbChair.Close()
 
 	// Start server
 	serverPort := fmt.Sprintf(":%v", getEnv("SERVER_PORT", "1323"))
@@ -243,11 +254,27 @@ func initialize(c echo.Context) error {
 	for _, p := range paths {
 		sqlFile, _ := filepath.Abs(p)
 		cmdStr := fmt.Sprintf("mysql -h %v -u %v -p%v -P %v %v < %v",
-			mySQLConnectionData.Host,
-			mySQLConnectionData.User,
-			mySQLConnectionData.Password,
-			mySQLConnectionData.Port,
-			mySQLConnectionData.DBName,
+			mySQLConnectionDataEstate.Host,
+			mySQLConnectionDataEstate.User,
+			mySQLConnectionDataEstate.Password,
+			mySQLConnectionDataEstate.Port,
+			mySQLConnectionDataEstate.DBName,
+			sqlFile,
+		)
+		if err := exec.Command("bash", "-c", cmdStr).Run(); err != nil {
+			c.Logger().Errorf("Initialize script error : %v", err)
+			return c.NoContent(http.StatusInternalServerError)
+		}
+	}
+
+	for _, p := range paths {
+		sqlFile, _ := filepath.Abs(p)
+		cmdStr := fmt.Sprintf("mysql -h %v -u %v -p%v -P %v %v < %v",
+			mySQLConnectionDataChair.Host,
+			mySQLConnectionDataChair.User,
+			mySQLConnectionDataChair.Password,
+			mySQLConnectionDataChair.Port,
+			mySQLConnectionDataChair.DBName,
 			sqlFile,
 		)
 		if err := exec.Command("bash", "-c", cmdStr).Run(); err != nil {
