@@ -4,6 +4,7 @@ CREATE DATABASE isuumo;
 DROP TABLE IF EXISTS isuumo.estate;
 DROP TABLE IF EXISTS isuumo.chair;
 
+DROP USER IF EXISTS isucon;
 CREATE USER `isucon`@`10.0.0.%` IDENTIFIED BY 'isucon';
 GRANT ALL PRIVILEGES ON `isuumo`.* TO `isucon`@`10.0.0.%`;
 
