@@ -231,12 +231,12 @@ func main() {
 	dbEstate.SetMaxOpenConns(10)
 	defer dbEstate.Close()
 
-	dbChair, err = mySQLConnectionDataChair.ConnectDB()
-	if err != nil {
-		e.Logger.Fatalf("DB connection failed : %v", err)
-	}
-	dbChair.SetMaxOpenConns(10)
-	defer dbChair.Close()
+	// dbChair, err = mySQLConnectionDataChair.ConnectDB()
+	// if err != nil {
+	// 	e.Logger.Fatalf("DB connection failed : %v", err)
+	// }
+	// dbChair.SetMaxOpenConns(10)
+	// defer dbChair.Close()
 
 	// Start server
 	serverPort := fmt.Sprintf(":%v", getEnv("SERVER_PORT", "1323"))
