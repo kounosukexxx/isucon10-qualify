@@ -318,7 +318,7 @@ func buyChair(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
-	chairCache.Set(chair.ID, nil)
+	chairCache.Set(chair.ID, chair)
 
 	return c.NoContent(http.StatusOK)
 }
